@@ -1,0 +1,98 @@
+<Window x:Class="PhotoNotes.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PhotoNotes - Local photo organizer" Width="1220" Height="820"
+        MinWidth="900" MinHeight="650" Background="#F4F6F8" Closing="Window_Closing">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Margin="0,0,0,18">
+            <TextBlock Text="PhotoNotes" FontSize="30" FontWeight="SemiBold" Foreground="#17324D" />
+            <TextBlock Text="Discover metadata. Find identical files. Preview an organized copy."
+                       Foreground="#435466" FontSize="14" />
+        </StackPanel>
+        <Grid Grid.Row="1" IsEnabled="{Binding IsIdle}" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="110" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Text="Source folder" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Text="{Binding SourceRoot, UpdateSourceTrigger=PropertyChanged}"
+                     Padding="8" Margin="0,0,10,8" />
+            <Button Grid.Column="2" Content="Browse..." Click="BrowseSource_Click" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="1" Text="Copy destination" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1"
+                     Text="{Binding DestinationRoot, UpdateSourceTrigger=PropertyChanged}"
+                     Padding="8" Margin="0,0,10,8" />
+            <Button Grid.Row="1" Grid.Column="2" Content="Browse..." Click="BrowseDestination_Click" Margin="0,0,0,8" />
+            <CheckBox Grid.Row="2" Grid.Column="1" Margin="0,4,0,0"
+                      IsChecked="{Binding OmitIdenticalCopies}"
+                      Content="Copy only one file per identical-content group (SHA-256)" />
+        </Grid>
+        <StackPanel Grid.Row="2" Margin="0,0,0,14">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <Button Content="1. Scan images" Click="Scan_Click" IsEnabled="{Binding IsIdle}" />
+                <Button Content="2. Preview copies" Click="Preview_Click" IsEnabled="{Binding CanPreview}" />
+                <Button Content="3. Copy previewed files" Click="Copy_Click" IsEnabled="{Binding CanCopy}" />
+                <Button Content="Export JSON report" Click="Export_Click" IsEnabled="{Binding CanExport}" />
+                <Button Content="Cancel" Click="Cancel_Click" IsEnabled="{Binding IsBusy}" />
+            </StackPanel>
+            <TextBlock Text="JPEG, PNG, HEIC/HEIF and TIFF - all subfolders included. Originals are never moved or deleted."
+                       Foreground="#435466" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" Margin="0,8,0,0" />
+        </StackPanel>
+        <TabControl Grid.Row="3">
+            <TabItem Header="Images and copy preview">
+                <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}"
+                          SelectionMode="Single" FrozenColumnCount="1">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="File" Binding="{Binding Image.FileName}" Width="170" />
+                        <DataGridTextColumn Header="Date" Binding="{Binding Image.PhotoDate, StringFormat=yyyy-MM-dd HH:mm:ss}" Width="150" />
+                        <DataGridTextColumn Header="Date source" Binding="{Binding Image.DateSource}" Width="115" />
+                        <DataGridCheckBoxColumn Header="Metadata" Binding="{Binding Image.HasMetadata}" Width="70" />
+                        <DataGridTextColumn Header="Identical peers" Binding="{Binding IdenticalPeers}" Width="100" />
+                        <DataGridTextColumn Header="Metadata ID" Binding="{Binding Image.MetadataId}" Width="160" />
+                        <DataGridTextColumn Header="Proposed copy" Binding="{Binding Destination}" Width="300" />
+                        <DataGridTextColumn Header="Source" Binding="{Binding Image.SourcePath}" Width="300" />
+                        <DataGridTextColumn Header="Error" Binding="{Binding Image.Error}" Width="250" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+            <TabItem Header="Selected image metadata">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="{Binding SelectedRow.Image.SourcePath}" Margin="10" TextWrapping="Wrap" />
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding SelectedRow.Image.Metadata}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Directory" Binding="{Binding Directory}" Width="160" />
+                            <DataGridTextColumn Header="Tag" Binding="{Binding Name}" Width="220" />
+                            <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Issues">
+                <TextBox Text="{Binding IssuesText}" IsReadOnly="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" Padding="10" />
+            </TabItem>
+        </TabControl>
+        <StackPanel Grid.Row="4" Margin="0,14,0,0">
+            <ProgressBar Height="4" IsIndeterminate="{Binding IsBusy}" Margin="0,0,0,8" />
+            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
+        </StackPanel>
+    </Grid>
+</Window>
