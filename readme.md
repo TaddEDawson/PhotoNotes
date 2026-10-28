@@ -24,21 +24,28 @@ $env:PATH = "$env:DOTNET_ROOT;$env:PATH"
 ## Scan, preview, and copy
 
 1. Choose a **source folder** and select **Scan images**. Subdirectories are
-   included automatically. JPEG (`.jpg`, `.jpeg`), PNG, HEIC/HEIF, and TIFF
-   (`.tif`, `.tiff`) are recognized, regardless of extension case.
+   included automatically. JPEG (`.jpg`, `.jpeg`), PNG, HEIC/HEIF, TIFF
+   (`.tif`, `.tiff`), and TIFF-based RAW (DNG, Canon CR2, Nikon NEF, Sony ARW)
+   are recognized, regardless of extension case.
 2. Select an image to inspect its **Selected image metadata** tab. Metadata
    includes embedded technical tags (such as dimensions), EXIF, IPTC, and XMP
    properties when the format and metadata reader expose them. A metadata
    indicator does not necessarily mean a capture date or camera details exist.
+   The image list also shows camera, lens, and signed decimal GPS coordinates
+   when available. Camera/lens details use EXIF first, with XMP fallback;
+   coordinates use embedded EXIF GPS tags.
 3. Check **Issues** for unreadable folders, skipped links, and damaged or
    unsupported image contents. Files with reading or metadata errors are
    excluded from copying, but remain visible in the report.
 4. Choose a **copy destination** outside the source folder. The source and
    destination must not contain one another.
 5. Select **Preview copies**. The app suggests `Year\Month\Day` folders based
-   on EXIF original date, then digitized date, then modified date. The date's
-   embedded wall-clock value is preserved without timezone conversion. Files
-   without a usable EXIF date go into `Undated`; filesystem timestamps are not
+   on EXIF original date, then digitized date, then modified date. When none is
+   usable, XMP original date, Photoshop date-created, XMP create-date, and XMP
+   modified-date (including its TIFF date-time alias) are tried in that order.
+   The date's embedded wall-clock value is
+   preserved without timezone conversion. Files without a usable embedded date
+   go into `Undated`; filesystem timestamps are not
    substituted. Preview does not create folders or copy files.
 6. By default, only one representative of each identical-content group is
    included in the plan. Uncheck the duplicate option to copy every readable
@@ -70,10 +77,13 @@ existing files; choose a new filename.
   photos, visually similar images, and files whose metadata was edited are not
   treated as identical.
 
-HEIC metadata extraction does not require an installed image codec. This app
+HEIC and RAW metadata extraction do not require installed image codecs. This app
 does not render thumbnails or decode image pixels. Metadata availability varies
 by file and container variant; extraction errors are reported rather than
-silently treated as metadata-free images.
+silently treated as metadata-free images. RAW support reads embedded metadata;
+it does not demosaic sensor data. Proprietary maker-note coverage depends on
+MetadataExtractor and the camera model. Test fixtures cover TIFF-based RAW
+metadata structures, including a CR2 header, rather than complete camera captures.
 
 ## Build, test, and format
 

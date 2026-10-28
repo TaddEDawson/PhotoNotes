@@ -10,11 +10,17 @@ public sealed record ImageRecord(
     string? MetadataId,
     string? ContentHash,
     IReadOnlyList<MetadataEntry> Metadata,
-    string? Error)
+    string? Error,
+    string Camera = "",
+    string Lens = "",
+    double? Latitude = null,
+    double? Longitude = null)
 {
     public string FileName => Path.GetFileName(SourcePath);
     public bool HasMetadata => Metadata.Count > 0;
     public bool CanCopy => Error is null && ContentHash is not null;
+    public string GpsCoordinates => Latitude is { } latitude && Longitude is { } longitude
+        ? FormattableString.Invariant($"{latitude:F6}, {longitude:F6}") : string.Empty;
     public string SuggestedFolder => PhotoDate?.ToString("yyyy/MM/dd",
         System.Globalization.CultureInfo.InvariantCulture) ?? "Undated";
 }

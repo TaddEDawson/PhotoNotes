@@ -36,7 +36,8 @@ See [readme.md](../readme.md) for user-local SDK setup and application usage.
   confirmation dialogs, and JSON report export.
 - Core behavior is tested with MSTest and generated image/container metadata
   fixtures; desktop behavior is exercised separately by the PowerShell smoke
-  test. The HEIC and JPEG fixtures test metadata containers, not pixel decoding.
+  test. HEIC, JPEG, and TIFF-based RAW fixtures test metadata containers, not
+  pixel decoding or RAW demosaicing.
 
 ## Behavioral conventions
 
@@ -46,12 +47,19 @@ See [readme.md](../readme.md) for user-local SDK setup and application usage.
   filesystem timestamps. Only full-file SHA-256 groups identical-content files.
   Changing the canonical serialization requires considering the ID version.
 - Read metadata from the already-open stream, not the filename overload, to
-  avoid including filesystem metadata in IDs. Preserve invariant formatting
+  avoid including filesystem metadata in IDs. Pass the filename as the stream
+  overload's second argument for TIFF/RAW type disambiguation. Preserve invariant formatting
   and ordinal sorting; XMP properties must be expanded beyond the library's
   property-count tag.
 - Folder dates use EXIF original, then digitized, then modified date, preserving
-  the embedded wall-clock value. Missing dates use `Undated`, never filesystem
-  dates. Embedded technical tags also count toward `HasMetadata`.
+  the embedded wall-clock value. If no EXIF date is usable, try XMP original,
+  Photoshop date-created, XMP create-date, then XMP modified-date (the XMP
+  parser normalizes the TIFF date-time alias to modified-date). Preserve the
+  wall-clock value of XMP offsets too. Missing dates use `Undated`, never
+  filesystem dates. Embedded technical tags also count toward `HasMetadata`.
+- Camera/lens summaries prefer EXIF and fall back to XMP. GPS display uses
+  EXIF coordinates in signed decimal degrees, formatted invariantly; absent
+  coordinates stay absent rather than becoming zero.
 - Never mutate source images. Plans are side-effect-free, require non-nested
   source/destination roots, and reserve names case-insensitively. Conflicts use
   hash/counter suffixes. Copy uses `FileMode.CreateNew`, revalidates source

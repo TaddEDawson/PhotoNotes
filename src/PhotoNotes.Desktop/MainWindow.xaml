@@ -53,7 +53,7 @@
                 <Button Content="Export JSON report" Click="Export_Click" IsEnabled="{Binding CanExport}" />
                 <Button Content="Cancel" Click="Cancel_Click" IsEnabled="{Binding IsBusy}" />
             </StackPanel>
-            <TextBlock Text="JPEG, PNG, HEIC/HEIF and TIFF - all subfolders included. Originals are never moved or deleted."
+            <TextBlock Text="JPEG, PNG, HEIC/HEIF, TIFF and RAW (DNG, CR2, NEF, ARW) - all subfolders included. Originals stay unchanged."
                        Foreground="#435466" TextWrapping="Wrap" />
             <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" Margin="0,8,0,0"
                        AutomationProperties.AutomationId="SummaryText" />
@@ -66,6 +66,9 @@
                         <DataGridTextColumn Header="File" Binding="{Binding Image.FileName}" Width="170" />
                         <DataGridTextColumn Header="Date" Binding="{Binding Image.PhotoDate, StringFormat=yyyy-MM-dd HH:mm:ss}" Width="150" />
                         <DataGridTextColumn Header="Date source" Binding="{Binding Image.DateSource}" Width="115" />
+                        <DataGridTextColumn Header="Camera" Binding="{Binding Image.Camera}" Width="180" />
+                        <DataGridTextColumn Header="Lens" Binding="{Binding Image.Lens}" Width="160" />
+                        <DataGridTextColumn Header="GPS (lat, lon)" Binding="{Binding Image.GpsCoordinates}" Width="175" />
                         <DataGridCheckBoxColumn Header="Metadata" Binding="{Binding Image.HasMetadata, Mode=OneWay}" Width="70" />
                         <DataGridTextColumn Header="Identical peers" Binding="{Binding IdenticalPeers}" Width="100" />
                         <DataGridTextColumn Header="Metadata ID" Binding="{Binding Image.MetadataId}" Width="160" />
