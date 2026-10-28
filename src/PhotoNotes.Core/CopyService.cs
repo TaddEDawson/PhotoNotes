@@ -45,11 +45,16 @@ public sealed class CopyService
         var issues = new List<ScanIssue>();
         foreach (var entry in plan.Entries)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            if (cancellationToken.IsCancellationRequested)
+                return new(copied, issues, IsCanceled: true);
             try
             {
                 await CopyOneAsync(plan, entry, cancellationToken).ConfigureAwait(false);
                 copied++;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return new(copied, issues, IsCanceled: true);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
             {
@@ -57,7 +62,7 @@ public sealed class CopyService
             }
             progress?.Report(new(copied, plan.Entries.Count, entry.DestinationPath));
         }
-        return new(copied, issues);
+        return new(copied, issues, IsCanceled: cancellationToken.IsCancellationRequested);
     }
 
     private static async Task CopyOneAsync(CopyPlan plan, CopyPlanEntry entry, CancellationToken cancellationToken)

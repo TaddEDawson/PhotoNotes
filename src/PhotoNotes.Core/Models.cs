@@ -35,4 +35,4 @@ public sealed record ScanResult(
 public sealed record CopyPlanEntry(ImageRecord Image, string DestinationPath);
 public sealed record CopyPlan(string SourceRoot, string DestinationRoot, IReadOnlyList<CopyPlanEntry> Entries);
 public sealed record CopyProgress(int Copied, int Total, string CurrentPath);
-public sealed record CopyResult(int Copied, IReadOnlyList<ScanIssue> Issues);
+public sealed record CopyResult(int Copied, IReadOnlyList<ScanIssue> Issues, bool IsCanceled = false);

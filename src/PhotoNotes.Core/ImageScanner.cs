@@ -2,6 +2,7 @@ using System.Globalization;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
 using MetadataExtractor.Formats.FileType;
+using MetadataExtractor.Formats.Xmp;
 using IO = System.IO;
 
 namespace PhotoNotes.Core;
@@ -91,17 +92,15 @@ public sealed class ImageScanner
             contentHash = ImageIdentity.Hash(stream, cancellationToken);
             stream.Position = 0;
             var directories = ImageMetadataReader.ReadMetadata(stream);
-            var metadata = directories.Where(d => d is not FileTypeDirectory)
-                .SelectMany(d => d.Tags.Select(tag =>
-                    new MetadataEntry(d.Name, tag.Type, tag.Name, CanonicalValue(d.GetObject(tag.Type)))))
-                .ToArray();
+            var metadata = ReadEntries(directories).ToArray();
             var errors = directories.SelectMany(d => d.Errors).ToArray();
             var (date, dateSource) = GetPhotoDate(directories);
             return new(path, size, date, dateSource, ImageIdentity.Create(Path.GetFileName(path), metadata),
                 contentHash, metadata, errors.Length == 0 ? null : string.Join("; ", errors));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
-                                   or ImageProcessingException or MetadataException or FormatException)
+                                   or ImageProcessingException or MetadataException or FormatException
+                                   or InvalidOperationException)
         {
             return new(path, size, null, "Unavailable", null, contentHash, [], ex.Message);
         }
@@ -123,6 +122,18 @@ public sealed class ImageScanner
             }
         }
         return (null, "No EXIF date");
+    }
+
+    private static IEnumerable<MetadataEntry> ReadEntries(IEnumerable<MetadataExtractor.Directory> directories)
+    {
+        foreach (var directory in directories.Where(d => d is not FileTypeDirectory))
+        {
+            foreach (var tag in directory.Tags)
+                yield return new(directory.Name, tag.Type, tag.Name, CanonicalValue(directory.GetObject(tag.Type)));
+            if (directory is XmpDirectory xmp)
+                foreach (var property in xmp.GetXmpProperties())
+                    yield return new("XMP properties", 0, property.Key, property.Value);
+        }
     }
 
     private static string CanonicalValue(object? value) => value switch

@@ -164,7 +164,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     Status = $"Copied {p.Copied}/{p.Total}. {p.CurrentPath}");
                 var result = await Task.Run(() => _copier.CopyAsync(plan, progress, token), token);
                 IssuesText = FormatIssues((_scan?.Issues ?? []).Concat(result.Issues));
-                Status = $"Copy finished: {result.Copied} copied, {result.Issues.Count} failed. Originals unchanged.";
+                var outcome = result.IsCanceled ? "Copy canceled" : "Copy finished";
+                Status = $"{outcome}: {result.Copied} copied, {result.Issues.Count} failed. Originals unchanged.";
             }
             finally
             {
@@ -181,7 +182,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         await RunOperationAsync(async token =>
         {
             var report = new { Version = 1, Scan = _scan, Plan = _plan, OperationIssues = IssuesText };
-            await using var stream = new FileStream(picker.FileName, FileMode.Create, FileAccess.Write);
+            await using var stream = new FileStream(picker.FileName, FileMode.CreateNew, FileAccess.Write);
             await JsonSerializer.SerializeAsync(stream, report, new JsonSerializerOptions { WriteIndented = true }, token);
             Status = $"Report saved to {picker.FileName}. Reports include local paths and embedded metadata.";
         });

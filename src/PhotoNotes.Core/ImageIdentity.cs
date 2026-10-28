@@ -14,8 +14,9 @@ public static class ImageIdentity
             FileName = Path.GetFileName(fileName).Normalize(NormalizationForm.FormC).ToUpperInvariant(),
             Tags = metadata.OrderBy(tag => tag.Directory, StringComparer.Ordinal)
                 .ThenBy(tag => tag.TagId)
+                .ThenBy(tag => tag.Name, StringComparer.Ordinal)
                 .ThenBy(tag => tag.Value, StringComparer.Ordinal)
-                .Select(tag => new { tag.Directory, tag.TagId, tag.Value })
+                .Select(tag => new { tag.Directory, tag.TagId, tag.Name, tag.Value })
         };
         return Convert.ToHexStringLower(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(canonical)));
     }

@@ -1,0 +1,117 @@
+# PhotoNotes
+
+A Windows desktop application for inspecting local photo metadata, identifying
+duplicates, and previewing an organized copy of a photo collection. Written in
+C# with .NET 10 and WPF. Photo scanning and copying stay on your machine.
+
+## Run
+
+Install the [.NET 10 SDK for Windows](https://dotnet.microsoft.com/download/dotnet/10.0),
+then run these commands from the repository root in PowerShell:
+
+```powershell
+dotnet build PhotoNotes.sln --configuration Release
+dotnet run --project src\PhotoNotes.Desktop --configuration Release --no-build
+```
+
+For a user-local SDK installation, first make it available in the current shell:
+
+```powershell
+$env:DOTNET_ROOT = "$env:USERPROFILE\.dotnet"
+$env:PATH = "$env:DOTNET_ROOT;$env:PATH"
+```
+
+## Scan, preview, and copy
+
+1. Choose a **source folder** and select **Scan images**. Subdirectories are
+   included automatically. JPEG (`.jpg`, `.jpeg`), PNG, HEIC/HEIF, and TIFF
+   (`.tif`, `.tiff`) are recognized, regardless of extension case.
+2. Select an image to inspect its **Selected image metadata** tab. Metadata
+   includes embedded technical tags (such as dimensions), EXIF, IPTC, and XMP
+   properties when the format and metadata reader expose them. A metadata
+   indicator does not necessarily mean a capture date or camera details exist.
+3. Check **Issues** for unreadable folders, skipped links, and damaged or
+   unsupported image contents. Files with reading or metadata errors are
+   excluded from copying, but remain visible in the report.
+4. Choose a **copy destination** outside the source folder. The source and
+   destination must not contain one another.
+5. Select **Preview copies**. The app suggests `Year\Month\Day` folders based
+   on EXIF original date, then digitized date, then modified date. The date's
+   embedded wall-clock value is preserved without timezone conversion. Files
+   without a usable EXIF date go into `Undated`; filesystem timestamps are not
+   substituted. Preview does not create folders or copy files.
+6. By default, only one representative of each identical-content group is
+   included in the plan. Uncheck the duplicate option to copy every readable
+   image. Existing and planned filename conflicts get a hash/counter suffix.
+7. Select **Copy previewed files** and confirm. Sources are rehashed before
+   copying, destinations are created without overwrite, and the copied bytes
+   are verified. Originals are never moved, deleted, or edited.
+
+The app skips symbolic links and junctions during scanning, and rejects them
+in copy paths. Canceling keeps completed copies and removes the current partial
+copy where possible; any cleanup failure is reported. After a copy attempt,
+preview again before copying more files. Changing the source requires a rescan;
+changing destination or duplicate preferences invalidates the preview.
+
+**Export JSON report** saves image paths, extracted metadata, identifiers,
+issues, and the current copy plan if one exists. Reports may contain sensitive
+embedded information such as GPS coordinates. Report export does not overwrite
+existing files; choose a new filename.
+
+## Identifiers and duplicates
+
+- **Metadata ID** is a versioned SHA-256 fingerprint of the case-normalized
+  filename and canonically ordered metadata directory/tag/name/value entries.
+  Directory location and filesystem timestamps are excluded. Renaming a file
+  changes this identifier; changing its parent folder does not. This is a
+  candidate identifier, not proof of identical image contents.
+- **Content hash** is SHA-256 over the complete file bytes. Matching hashes
+  group identical-content files even when their filenames differ. Recompressed
+  photos, visually similar images, and files whose metadata was edited are not
+  treated as identical.
+
+HEIC metadata extraction does not require an installed image codec. This app
+does not render thumbnails or decode image pixels. Metadata availability varies
+by file and container variant; extraction errors are reported rather than
+silently treated as metadata-free images.
+
+## Build, test, and format
+
+```powershell
+# Build the desktop app, core, and tests.
+dotnet build PhotoNotes.sln --configuration Release
+
+# Core tests, including independently generated EXIF/container fixtures.
+dotnet test tests\PhotoNotes.Core.Tests --configuration Release
+
+# A single test.
+dotnet test tests\PhotoNotes.Core.Tests --configuration Release --filter "FullyQualifiedName~CopyAsync_VerifiesCopyAndLeavesSourceUnchanged"
+
+# Check SDK formatting and analyzers.
+dotnet format PhotoNotes.sln --verify-no-changes --no-restore
+
+# Desktop end-to-end smoke test (interactive Windows session; English UI).
+# Build Release first. A user-local runtime needs DOTNET_ROOT set as above.
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\Desktop.Smoke.ps1
+```
+
+The desktop smoke test opens its own app window, scans temporary images,
+previews a deduplicated copy, confirms it, verifies the copied bytes, then
+closes the window and removes its temporary collection.
+
+## Architecture
+
+`PhotoNotes.Core` is UI-independent: `ImageScanner` performs recursive discovery
+and metadata extraction using
+[MetadataExtractor](https://github.com/drewnoakes/metadata-extractor-dotnet);
+`ImageIdentity` creates deterministic fingerprints; `CopyService` separates
+side-effect-free planning from explicitly requested copying.
+
+`PhotoNotes.Desktop` is a single-window WPF application. Its code-behind exposes
+binding properties and manages scan/preview/copy state, cancellation, progress,
+and report export. Scanning and copying run off the UI thread. Core results
+remain independent of WPF so file-handling behavior can be tested without
+opening a window.
+
+git config --global user.email "drtadd@hotmail.com"
+git config --global user.name "Tadd E. Dawson"

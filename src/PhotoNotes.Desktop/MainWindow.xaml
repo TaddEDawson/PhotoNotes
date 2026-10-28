@@ -29,10 +29,12 @@
             </Grid.RowDefinitions>
             <TextBlock Text="Source folder" VerticalAlignment="Center" />
             <TextBox Grid.Column="1" Text="{Binding SourceRoot, UpdateSourceTrigger=PropertyChanged}"
+                     AutomationProperties.AutomationId="SourceFolderInput"
                      Padding="8" Margin="0,0,10,8" />
             <Button Grid.Column="2" Content="Browse..." Click="BrowseSource_Click" Margin="0,0,0,8" />
             <TextBlock Grid.Row="1" Text="Copy destination" VerticalAlignment="Center" />
             <TextBox Grid.Row="1" Grid.Column="1"
+                     AutomationProperties.AutomationId="DestinationFolderInput"
                      Text="{Binding DestinationRoot, UpdateSourceTrigger=PropertyChanged}"
                      Padding="8" Margin="0,0,10,8" />
             <Button Grid.Row="1" Grid.Column="2" Content="Browse..." Click="BrowseDestination_Click" Margin="0,0,0,8" />
@@ -42,15 +44,19 @@
         </Grid>
         <StackPanel Grid.Row="2" Margin="0,0,0,14">
             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <Button Content="1. Scan images" Click="Scan_Click" IsEnabled="{Binding IsIdle}" />
-                <Button Content="2. Preview copies" Click="Preview_Click" IsEnabled="{Binding CanPreview}" />
-                <Button Content="3. Copy previewed files" Click="Copy_Click" IsEnabled="{Binding CanCopy}" />
+                <Button Content="1. Scan images" Click="Scan_Click" IsEnabled="{Binding IsIdle}"
+                        AutomationProperties.AutomationId="ScanButton" />
+                <Button Content="2. Preview copies" Click="Preview_Click" IsEnabled="{Binding CanPreview}"
+                        AutomationProperties.AutomationId="PreviewButton" />
+                <Button Content="3. Copy previewed files" Click="Copy_Click" IsEnabled="{Binding CanCopy}"
+                        AutomationProperties.AutomationId="CopyButton" />
                 <Button Content="Export JSON report" Click="Export_Click" IsEnabled="{Binding CanExport}" />
                 <Button Content="Cancel" Click="Cancel_Click" IsEnabled="{Binding IsBusy}" />
             </StackPanel>
             <TextBlock Text="JPEG, PNG, HEIC/HEIF and TIFF - all subfolders included. Originals are never moved or deleted."
                        Foreground="#435466" TextWrapping="Wrap" />
-            <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" Margin="0,8,0,0" />
+            <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" Margin="0,8,0,0"
+                       AutomationProperties.AutomationId="SummaryText" />
         </StackPanel>
         <TabControl Grid.Row="3">
             <TabItem Header="Images and copy preview">
@@ -60,7 +66,7 @@
                         <DataGridTextColumn Header="File" Binding="{Binding Image.FileName}" Width="170" />
                         <DataGridTextColumn Header="Date" Binding="{Binding Image.PhotoDate, StringFormat=yyyy-MM-dd HH:mm:ss}" Width="150" />
                         <DataGridTextColumn Header="Date source" Binding="{Binding Image.DateSource}" Width="115" />
-                        <DataGridCheckBoxColumn Header="Metadata" Binding="{Binding Image.HasMetadata}" Width="70" />
+                        <DataGridCheckBoxColumn Header="Metadata" Binding="{Binding Image.HasMetadata, Mode=OneWay}" Width="70" />
                         <DataGridTextColumn Header="Identical peers" Binding="{Binding IdenticalPeers}" Width="100" />
                         <DataGridTextColumn Header="Metadata ID" Binding="{Binding Image.MetadataId}" Width="160" />
                         <DataGridTextColumn Header="Proposed copy" Binding="{Binding Destination}" Width="300" />
@@ -86,13 +92,14 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Issues">
-                <TextBox Text="{Binding IssuesText}" IsReadOnly="True" TextWrapping="Wrap"
+                <TextBox Text="{Binding IssuesText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
                          VerticalScrollBarVisibility="Auto" Padding="10" />
             </TabItem>
         </TabControl>
         <StackPanel Grid.Row="4" Margin="0,14,0,0">
             <ProgressBar Height="4" IsIndeterminate="{Binding IsBusy}" Margin="0,0,0,8" />
-            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding Status}" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="StatusText" />
         </StackPanel>
     </Grid>
 </Window>
