@@ -48,7 +48,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         set
         {
             if (_sourceRoot == value) return;
-            if (!ConfirmDiscardNote())
+            if (!CanLeaveNote())
             {
                 Dispatcher.BeginInvoke(() => Notify(nameof(SourceRoot)));
                 return;
@@ -111,7 +111,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (_refreshingRows) return;
             if (_selectedRow?.Image.ContentHash != value?.Image.ContentHash)
             {
-                if (!ConfirmDiscardNote())
+                if (!CanLeaveNote())
                 {
                     Dispatcher.BeginInvoke(() => Notify(nameof(SelectedRow)));
                     return;
@@ -169,7 +169,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ShowInputError("Choose a source directory first.");
             return;
         }
-        if (!ConfirmDiscardNote()) return;
+        if (!CanLeaveNote()) return;
         ResetNoteDraft();
         await RunOperationAsync(async token =>
         {
@@ -191,7 +191,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 {
                     _notes[hash] = await _noteStore.LoadAsync(hash, token);
                 }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
                 {
                     _unreadableNotes.Add(hash);
                     noteIssues.Add(new($"Notes for {hash}", ex.Message));
@@ -200,7 +200,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             RefreshRows();
             IssuesText = FormatIssues(_scan.Issues.Concat(noteIssues));
             Summary = $"{_scan.Images.Count} images | {_scan.Images.Count(i => i.HasMetadata)} with metadata | " +
-                      $"{_scan.DuplicateFiles} extra identical files | {_scan.Issues.Count} issues";
+                      $"{_scan.DuplicateFiles} extra identical files | {_scan.Issues.Count + noteIssues.Count} issues";
             Status = "Scan complete. Choose a destination and preview copies. Review the Issues tab before copying.";
         });
     }
@@ -301,9 +301,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                  "Windows may require internet, microphone permission, and online speech recognition.";
     }
 
-    private bool ConfirmDiscardNote() => !HasUnsavedNote || MessageBox.Show(this,
-        "Discard the unsaved note? Choose Cancel to keep editing, then Save note.",
-        "Unsaved note", MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.OK;
+    private bool CanLeaveNote()
+    {
+        if (!HasUnsavedNote) return true;
+        Status = "Unsaved note: select Save note to keep it, or Revert to discard changes before leaving this image.";
+        return false;
+    }
 
     private void ResetNoteDraft()
     {
@@ -402,7 +405,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (!IsBusy)
         {
-            e.Cancel = !ConfirmDiscardNote();
+            e.Cancel = !CanLeaveNote();
             return;
         }
         e.Cancel = true;

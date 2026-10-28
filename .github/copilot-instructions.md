@@ -60,6 +60,12 @@ See [readme.md](../readme.md) for user-local SDK setup and application usage.
 - Camera/lens summaries prefer EXIF and fall back to XMP. GPS display uses
   EXIF coordinates in signed decimal degrees, formatted invariantly; absent
   coordinates stay absent rather than becoming zero.
+- Notes live outside images in `%LOCALAPPDATA%\PhotoNotes\Notes`, keyed by
+  full-file content hash, not metadata ID. `NoteStore` enforces 2,048 UTF-16
+  code units and publishes complete versioned JSON files atomically. Preserve
+  unsaved drafts across plan refreshes and same-content selections; unreadable
+  notes must be reported and protected from editing. Report exports include
+  saved notes. Voice input uses Windows Win+H, not app-managed audio recording.
 - Never mutate source images. Plans are side-effect-free, require non-nested
   source/destination roots, and reserve names case-insensitively. Conflicts use
   hash/counter suffixes. Copy uses `FileMode.CreateNew`, revalidates source

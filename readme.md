@@ -61,9 +61,38 @@ preview again before copying more files. Changing the source requires a rescan;
 changing destination or duplicate preferences invalidates the preview.
 
 **Export JSON report** saves image paths, extracted metadata, identifiers,
-issues, and the current copy plan if one exists. Reports may contain sensitive
+issues, saved notes keyed by content hash, and the current copy plan if one exists.
+Save or revert any unsaved note before exporting. Reports may contain sensitive
 embedded information such as GPS coordinates. Report export does not overwrite
 existing files; choose a new filename.
+
+## Image notes and voice typing
+
+Select an image and use **Selected image notes** to enter a description of up to
+2,048 characters (UTF-16 code units, including spaces and line breaks). Select
+**Save note** to persist it, or **Revert** to restore the saved text. Saving an
+empty description clears a note. Save or revert unsaved changes before switching
+to a different content ID, rescanning, changing source, or closing; the status
+line explains when an unsaved draft blocks one of these actions.
+
+Notes are stored separately as versioned JSON files in
+`%LOCALAPPDATA%\PhotoNotes\Notes\<SHA-256 content hash>.json`. Source image bytes,
+embedded metadata, and metadata IDs are never modified. Renamed files and
+byte-identical copies share a note, including organized copies. Images whose
+bytes change (even only embedded metadata) have a different content hash and
+therefore a separate note. Images without a readable content hash cannot have
+notes. A note that cannot be read is reported in **Issues** and is not editable
+until the storage problem is resolved. Back up this folder to preserve notes;
+saved notes for scanned images are also included in JSON report exports.
+
+For **voice transcription**, focus the notes box and press **Win+H** to open
+Windows voice typing, then speak. The **Voice typing (Win+H)** button focuses the
+editor and shows instructions; it does not start recording itself. Review the
+transcribed text and select **Save note**. Windows manages the microphone,
+supported languages, and speech recognition; internet, microphone permission,
+and online speech recognition settings may be required. PhotoNotes does not
+record or store audio, but Windows voice typing may send audio to Microsoft's
+speech service. Typing normally works without speech services.
 
 ## Identifiers and duplicates
 
