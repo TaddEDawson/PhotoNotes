@@ -10,6 +10,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel Margin="0,0,0,18">
             <TextBlock Text="PhotoNotes" FontSize="30" FontWeight="SemiBold" Foreground="#17324D" />
@@ -61,6 +62,7 @@
         <TabControl Grid.Row="3">
             <TabItem Header="Images and copy preview">
                 <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}"
+                          IsEnabled="{Binding IsIdle}" AutomationProperties.AutomationId="ImagesGrid"
                           SelectionMode="Single" FrozenColumnCount="1">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="File" Binding="{Binding Image.FileName}" Width="170" />
@@ -99,7 +101,37 @@
                          VerticalScrollBarVisibility="Auto" Padding="10" />
             </TabItem>
         </TabControl>
-        <StackPanel Grid.Row="4" Margin="0,14,0,0">
+        <GroupBox Grid.Row="4" Header="Selected image notes" Margin="0,10,0,0">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="{Binding NoteIdentity}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6" />
+                <TextBox x:Name="NotesInput" Grid.Row="1" Height="70" Padding="6"
+                         AutomationProperties.AutomationId="NotesInput"
+                         AutomationProperties.Name="Image description"
+                         Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}"
+                         MaxLength="2048" AcceptsReturn="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" IsEnabled="{Binding CanEditNote}" />
+                <StackPanel Grid.Row="2" Margin="0,8,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Save note" Click="SaveNote_Click" IsEnabled="{Binding CanSaveNote}"
+                                AutomationProperties.AutomationId="SaveNoteButton" />
+                        <Button Content="Revert" Click="RevertNote_Click" IsEnabled="{Binding CanRevertNote}"
+                                AutomationProperties.AutomationId="RevertNoteButton" />
+                        <Button Content="Voice typing (Win+H)" Click="VoiceTyping_Click" IsEnabled="{Binding CanEditNote}"
+                                AutomationProperties.AutomationId="VoiceTypingButton" />
+                        <TextBlock Text="{Binding NoteCharacterCount}" VerticalAlignment="Center"
+                                   AutomationProperties.AutomationId="NoteCharacterCount" />
+                    </StackPanel>
+                    <TextBlock Text="To dictate: focus the notes box and press Win+H. Windows speech settings and internet may be required."
+                               TextWrapping="Wrap" Foreground="#435466" Margin="0,6,0,0" />
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+        <StackPanel Grid.Row="5" Margin="0,14,0,0">
             <ProgressBar Height="4" IsIndeterminate="{Binding IsBusy}" Margin="0,0,0,8" />
             <TextBlock Text="{Binding Status}" TextWrapping="Wrap"
                        AutomationProperties.AutomationId="StatusText" />
