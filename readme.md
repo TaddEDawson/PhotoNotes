@@ -134,9 +134,13 @@ dotnet format PhotoNotes.sln --verify-no-changes --no-restore
 powershell -NoProfile -ExecutionPolicy Bypass -File tests\Desktop.Smoke.ps1
 ```
 
-The desktop smoke test opens its own app window, scans temporary images,
-previews a deduplicated copy, confirms it, verifies the copied bytes, then
-closes the window and removes its temporary collection.
+The desktop smoke test opens its own app window and exercises scanning,
+deduplicated copying, and note behavior: the 2,048-character limit, sharing
+notes across identical and copied images, unsaved-draft protection, voice-typing
+focus, persistence across an app restart, clearing, and corrupt-note protection.
+It writes a note for a uniquely generated temporary image under
+`%LOCALAPPDATA%\PhotoNotes\Notes` and removes that note and its temporary
+collection when finished. It closes only the app process it starts.
 
 ## Architecture
 
