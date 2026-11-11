@@ -19,8 +19,12 @@ After building Release, the interactive Windows UI smoke test is:
 powershell -NoProfile -ExecutionPolicy Bypass -File tests\Desktop.Smoke.ps1
 ```
 
-It uses Windows UI Automation and English confirmation-button names. It creates
-its own temporary collection and closes only the app process it starts.
+It uses Windows UI Automation and English confirmation-button names. It tests
+deduplicated copying and note limits, sharing, draft protection, voice-typing
+focus, restart persistence, clearing, and corrupt-note handling. It writes and
+removes a note for a uniquely generated test image under
+`%LOCALAPPDATA%\PhotoNotes\Notes`, creates its own temporary collection, and
+closes only the app process it starts.
 See [readme.md](../readme.md) for user-local SDK setup and application usage.
 
 ## Architecture

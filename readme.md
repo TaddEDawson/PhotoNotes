@@ -137,6 +137,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests\Desktop.Smoke.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tests\Desktop.Smoke.ps1 -NotesOnly
 ```
 
+<<<<<<< HEAD
 The desktop smoke test opens its own app window, scans temporary images,
 previews a deduplicated copy, confirms it, verifies the copied bytes, then
 closes the window and removes its temporary collection.
@@ -145,6 +146,15 @@ protection, persistence through restart, clearing, and corrupt-file handling.
 The notes-only mode checks those features without performing a copy. Speech
 recognition itself needs a manual microphone/Win+H check on the user's Windows
 session; automation only checks the focus and voice-typing instructions.
+=======
+The desktop smoke test opens its own app window and exercises scanning,
+deduplicated copying, and note behavior: the 2,048-character limit, sharing
+notes across identical and copied images, unsaved-draft protection, voice-typing
+focus, persistence across an app restart, clearing, and corrupt-note protection.
+It writes a note for a uniquely generated temporary image under
+`%LOCALAPPDATA%\PhotoNotes\Notes` and removes that note and its temporary
+collection when finished. It closes only the app process it starts.
+>>>>>>> 6d83f1410b4a675e9595639c707a94bd1200f82f
 
 ## Architecture
 
