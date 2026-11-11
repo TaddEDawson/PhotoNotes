@@ -132,11 +132,19 @@ dotnet format PhotoNotes.sln --verify-no-changes --no-restore
 # Desktop end-to-end smoke test (interactive Windows session; English UI).
 # Build Release first. A user-local runtime needs DOTNET_ROOT set as above.
 powershell -NoProfile -ExecutionPolicy Bypass -File tests\Desktop.Smoke.ps1
+
+# Notes editor/persistence only, without the interactive copy confirmation.
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\Desktop.Smoke.ps1 -NotesOnly
 ```
 
 The desktop smoke test opens its own app window, scans temporary images,
 previews a deduplicated copy, confirms it, verifies the copied bytes, then
 closes the window and removes its temporary collection.
+It also verifies the notes character limit, shared identifiers, unsaved-draft
+protection, persistence through restart, clearing, and corrupt-file handling.
+The notes-only mode checks those features without performing a copy. Speech
+recognition itself needs a manual microphone/Win+H check on the user's Windows
+session; automation only checks the focus and voice-typing instructions.
 
 ## Architecture
 

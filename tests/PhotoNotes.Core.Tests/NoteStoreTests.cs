@@ -131,7 +131,7 @@ public sealed class NoteStoreTests
         await store.SaveAsync(Hash, "keep");
         using (var locked = new FileStream(Path.Combine(_root, Hash + ".json"),
                    FileMode.Open, FileAccess.Read, FileShare.Read))
-            await Assert.ThrowsExceptionAsync<IOException>(() => store.SaveAsync(Hash, "discard"));
+            await Assert.ThrowsExceptionAsync<UnauthorizedAccessException>(() => store.SaveAsync(Hash, "discard"));
         Assert.AreEqual("keep", await store.LoadAsync(Hash));
         Assert.AreEqual(1, Directory.GetFiles(_root).Length);
     }

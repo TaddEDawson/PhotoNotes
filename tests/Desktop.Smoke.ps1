@@ -1,5 +1,6 @@
 param(
-    [string]$Executable = (Join-Path $PSScriptRoot '..\src\PhotoNotes.Desktop\bin\Release\net10.0-windows\PhotoNotes.Desktop.exe')
+    [string]$Executable = (Join-Path $PSScriptRoot '..\src\PhotoNotes.Desktop\bin\Release\net10.0-windows\PhotoNotes.Desktop.exe'),
+    [switch]$NotesOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,6 +44,23 @@ function Set-ControlValue([string]$Id, [string]$Value) {
 function Get-ControlValue([string]$Id) {
     $pattern = (Find-Control $Id).GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
     return $pattern.Current.Value
+}
+
+function Find-ConfirmationButton {
+    $processCondition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $script:app.Id)
+    $windows = [System.Windows.Automation.AutomationElement]::RootElement.FindAll(
+        [System.Windows.Automation.TreeScope]::Children, $processCondition)
+    $nameCondition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::NameProperty, 'Yes')
+    $invokeCondition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::IsInvokePatternAvailableProperty, $true)
+    $condition = [System.Windows.Automation.AndCondition]::new($nameCondition, $invokeCondition)
+    foreach ($candidate in $windows) {
+        $button = $candidate.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        if ($null -ne $button) { return $button }
+    }
+    return $null
 }
 
 function Start-App {
@@ -106,49 +124,52 @@ try {
     if ((Get-ControlValue 'NotesInput') -ne 'unsaved draft') { throw 'Preview discarded the unsaved note draft.' }
     Invoke-Control 'RevertNoteButton'
     if ((Get-ControlValue 'NotesInput') -ne $description) { throw 'Revert did not restore the saved note.' }
-    Invoke-Control 'VoiceTypingButton'
-    if (-not (Find-Control 'NotesInput').Current.HasKeyboardFocus) { throw 'Voice typing did not focus the notes editor.' }
-    if ((Find-Control 'StatusText').Current.Name -notlike 'Press Win+H*') { throw 'Voice typing guidance is missing.' }
     if (Test-Path -LiteralPath $destination) { throw 'Preview created the destination directory.' }
-    Invoke-Control 'CopyButton'
-    $script:yes = $null
-    Wait-Until {
-        if ((Find-Control 'StatusText').Current.Name -like 'Copy finished:*') { return $true }
-        $nameCondition = [System.Windows.Automation.PropertyCondition]::new(
-            [System.Windows.Automation.AutomationElement]::NameProperty, 'Yes')
-        $invokeCondition = [System.Windows.Automation.PropertyCondition]::new(
-            [System.Windows.Automation.AutomationElement]::IsInvokePatternAvailableProperty, $true)
-        $condition = [System.Windows.Automation.AndCondition]::new($nameCondition, $invokeCondition)
-        $script:yes = $script:window.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
-        $null -ne $script:yes
-    } 'confirmation dialog'
-    if ($null -ne $script:yes) {
-        $script:yes.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
-    }
-    Wait-Until { (Find-Control 'StatusText').Current.Name -like 'Copy finished:*' } 'copy completion'
-    $status = (Find-Control 'StatusText').Current.Name
-    if ($status -ne 'Copy finished: 1 copied, 0 failed. Originals unchanged.') {
-        throw "Unexpected copy status: $status"
-    }
-    $copies = @(Get-ChildItem -LiteralPath $destination -Recurse -File)
-    if ($copies.Count -ne 1 -or $copies[0].Directory.Name -ne 'Undated') {
-        throw 'Expected one deduplicated copy in Undated.'
-    }
-    if ((Get-FileHash -LiteralPath $copies[0].FullName).Hash -ne
-        (Get-FileHash -LiteralPath (Join-Path $source 'first.png')).Hash) {
-        throw 'Copy content does not match the source.'
+    $reloadSource = $source
+    if (-not $NotesOnly) {
+        Invoke-Control 'CopyButton'
+        $script:yes = $null
+        Wait-Until {
+            if ((Find-Control 'StatusText').Current.Name -like 'Copy finished:*') { return $true }
+            $script:yes = Find-ConfirmationButton
+            $null -ne $script:yes
+        } 'confirmation dialog'
+        if ($null -ne $script:yes) {
+            $script:yes.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        }
+        Wait-Until { (Find-Control 'StatusText').Current.Name -like 'Copy finished:*' } 'copy completion'
+        $status = (Find-Control 'StatusText').Current.Name
+        if ($status -ne 'Copy finished: 1 copied, 0 failed. Originals unchanged.') {
+            throw "Unexpected copy status: $status"
+        }
+        $copies = @(Get-ChildItem -LiteralPath $destination -Recurse -File)
+        if ($copies.Count -ne 1 -or $copies[0].Directory.Name -ne 'Undated') {
+            throw 'Expected one deduplicated copy in Undated.'
+        }
+        if ((Get-FileHash -LiteralPath $copies[0].FullName).Hash -ne
+            (Get-FileHash -LiteralPath (Join-Path $source 'first.png')).Hash) {
+            throw 'Copy content does not match the source.'
+        }
+        $reloadSource = $destination
     }
     if (@(Get-ChildItem -LiteralPath $source -Recurse -File).Count -ne 2) {
         throw 'Original files were modified.'
     }
+    if ((Get-FileHash -LiteralPath (Join-Path $source 'first.png')).Hash.ToLowerInvariant() -ne $hash -or
+        (Get-FileHash -LiteralPath (Join-Path $nested 'renamed.png')).Hash.ToLowerInvariant() -ne $hash) {
+        throw 'Saving notes changed source image bytes.'
+    }
+    Invoke-Control 'VoiceTypingButton'
+    if (-not (Find-Control 'NotesInput').Current.HasKeyboardFocus) { throw 'Voice typing did not focus the notes editor.' }
+    if ((Find-Control 'StatusText').Current.Name -notlike 'Press Win+H*') { throw 'Voice typing guidance is missing.' }
     [void]$app.CloseMainWindow()
     if (-not $app.WaitForExit(5000)) { throw 'App did not close after saving notes.' }
     Start-App
-    Set-ControlValue 'SourceFolderInput' $destination
+    Set-ControlValue 'SourceFolderInput' $reloadSource
     Invoke-Control 'ScanButton'
-    Wait-Until { (Find-Control 'NotesInput').Current.IsEnabled } 'copied-image notes after restart'
+    Wait-Until { (Find-Control 'NotesInput').Current.IsEnabled } 'image notes after restart'
     if ((Get-ControlValue 'NotesInput') -ne $description) {
-        throw 'Copied image did not retain the shared note across an app restart.'
+        throw 'Image did not retain the shared note across an app restart.'
     }
     Set-ControlValue 'NotesInput' ''
     Invoke-Control 'SaveNoteButton'
@@ -160,7 +181,7 @@ try {
     if (-not $app.WaitForExit(5000)) { throw 'App did not close after clearing notes.' }
     [System.IO.File]::WriteAllText($noteFile, '{broken JSON')
     Start-App
-    Set-ControlValue 'SourceFolderInput' $destination
+    Set-ControlValue 'SourceFolderInput' $reloadSource
     Invoke-Control 'ScanButton'
     Wait-Until { (Find-Control 'PreviewButton').Current.IsEnabled } 'scan with corrupt note'
     if ((Find-Control 'NotesInput').Current.IsEnabled -or
@@ -168,7 +189,9 @@ try {
         throw 'Corrupt notes were not explicitly reported and protected from editing.'
     }
     if ([System.IO.File]::ReadAllText($noteFile) -ne '{broken JSON') { throw 'Corrupt notes were overwritten.' }
-    Write-Output "Desktop smoke test passed. $summary $status Notes: 2048 characters, shared duplicates, unsaved protection, voice focus, restart, clearing, and corrupt-data handling verified."
+    $mode = 'Full workflow'
+    if ($NotesOnly) { $mode = 'Notes-only (copy confirmation not exercised)' }
+    Write-Output "Desktop smoke test passed: $mode. Notes: 2048 characters, shared duplicates, unsaved protection, voice focus, restart, clearing, and corrupt-data handling verified."
 }
 finally {
     if ($null -ne $app -and -not $app.HasExited) {
